@@ -200,4 +200,7 @@ export interface CorrelationRow {
   ga4_revenue: number;
   has_ga4_data: boolean;
   conversion_discrepancy: number | null;
+  woo_revenue: number;
+  woo_order_count: number;
+  has_woo_data: boolean;
 }

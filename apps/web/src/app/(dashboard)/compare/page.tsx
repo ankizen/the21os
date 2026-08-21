@@ -32,7 +32,7 @@ export default function ComparePage() {
     <>
       <PageHeader
         title="Compare"
-        description="Meta-reported vs GA4-reported performance, joined by campaign — never blended into one number."
+        description="Meta-reported, GA4-reported, and real WooCommerce orders, joined by campaign — never blended into one number."
       />
 
       {isLoading ? (
@@ -60,6 +60,8 @@ export default function ComparePage() {
                   <TableHead className="text-right">GA4 sessions</TableHead>
                   <TableHead className="text-right">GA4 key events</TableHead>
                   <TableHead className="text-right">Discrepancy</TableHead>
+                  <TableHead className="text-right">Real orders</TableHead>
+                  <TableHead className="text-right">Real revenue</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -85,6 +87,16 @@ export default function ComparePage() {
                           {r.conversion_discrepancy > 0 ? "+" : ""}
                           {formatNumber(r.conversion_discrepancy)}
                         </span>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {r.has_woo_data ? formatNumber(r.woo_order_count) : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {r.has_woo_data ? (
+                        <span className="font-medium text-emerald-500">{formatCurrency(r.woo_revenue)}</span>
                       ) : (
                         "—"
                       )}

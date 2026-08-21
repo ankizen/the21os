@@ -1,14 +1,20 @@
+import httpx
 from facebook_business.exceptions import FacebookRequestError
 from fastapi import APIRouter, Depends, HTTPException, Query
 from google.api_core.exceptions import GoogleAPICallError
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from the21os.auth.dependencies import get_current_user
 from the21os.core.correlation import correlate_campaigns
+from the21os.db.base import get_db
+from the21os.db.models import WordPressConnection
 from the21os.ga4 import reports as ga4_reports
 from the21os.ga4.client import GA4NotConfigured
 from the21os.meta import insights as meta_insights
 from the21os.meta.client import MetaNotConfigured
+from the21os.wordpress.client import WordPressNotConfigured
+from the21os.wordpress.orders import date_preset_range, list_orders
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"], dependencies=[Depends(get_current_user)])
 
@@ -25,6 +31,28 @@ class CorrelationRow(BaseModel):
     ga4_revenue: float
     has_ga4_data: bool
     conversion_discrepancy: float | None
+    woo_revenue: float
+    woo_order_count: int
+    has_woo_data: bool
+
+
+async def _fetch_woo_rows(db: AsyncSession, date_preset: str) -> list[dict]:
+    """WooCommerce is optional here, unlike Meta/GA4 — if it's not
+    connected, or the date_preset isn't one of the few WooCommerce
+    supports, the Meta-vs-GA4 comparison still works without it."""
+    conn = await db.get(WordPressConnection, 1)
+    if conn is None or not conn.site_url:
+        return []
+    try:
+        after, before = date_preset_range(date_preset)
+        orders = await list_orders(conn, after, before)
+    except (WordPressNotConfigured, httpx.HTTPError, ValueError):
+        return []
+    return [
+        {"campaign_id": o["utm_campaign"], "revenue": o["total"], "order_count": 1}
+        for o in orders
+        if o["utm_campaign"]
+    ]
 
 
 @router.get("/correlation", response_model=list[CorrelationRow])
@@ -32,9 +60,11 @@ async def get_correlation(
     date_preset: str = Query(default="last_30d"),
     start_date: str = Query(default="28daysAgo"),
     end_date: str = Query(default="today"),
+    db: AsyncSession = Depends(get_db),
 ) -> list[CorrelationRow]:
-    """Meta campaign performance next to GA4 sessions/key events for the same
-    campaign ID — never blended into one number, see core/correlation.py."""
+    """Meta campaign performance next to GA4 sessions/key events and real
+    WooCommerce order revenue for the same campaign ID — never blended into
+    one number, see core/correlation.py."""
     try:
         meta_data = await meta_insights.get_campaign_insights(date_preset=date_preset)
     except MetaNotConfigured as e:
@@ -70,5 +100,6 @@ async def get_correlation(
         }
         for row in ga4_data.rows
     ]
+    woo_rows = await _fetch_woo_rows(db, date_preset)
 
-    return correlate_campaigns(meta_rows, ga4_rows)
+    return correlate_campaigns(meta_rows, ga4_rows, woo_rows)
