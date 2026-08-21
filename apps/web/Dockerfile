@@ -29,4 +29,9 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD node -e "fetch('http://localhost:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-CMD ["node", "server.js"]
+# Docker auto-sets HOSTNAME to the container's own id for every container,
+# which shadows the standalone server's `process.env.HOSTNAME || '0.0.0.0'`
+# fallback and binds it to that id instead of all interfaces — unreachable
+# from sibling containers (Traefik included). A Dockerfile ENV can't be
+# trusted to win that race, so force it right at exec time instead.
+CMD ["/bin/sh", "-c", "HOSTNAME=0.0.0.0 exec node server.js"]
