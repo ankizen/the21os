@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-the21secrets}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-the21secrets}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-the21secrets}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./apps/api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ENV: ${ENV:-prod}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-the21secrets}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-the21secrets}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?set ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        # NEXT_PUBLIC_* vars are inlined into the client bundle at build time,
+        # not read at container runtime — must be a build arg, not `environment:`.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+volumes:
+  db_data:
