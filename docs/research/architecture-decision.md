@@ -12,7 +12,7 @@
               │                                    │
               ▼                                    ▼
    ┌───────────────────────────────────────────────────────┐
-   │              THE21SECRETS BACKEND (FastAPI)            │
+   │                THE21OS BACKEND (FastAPI)                │
    │  ┌────────────┐  ┌────────────┐  ┌──────────────────┐ │
    │  │ REST API   │  │ MCP server │  │ Scheduler         │ │
    │  │ (dashboard,│  │ (mounted   │  │ (APScheduler,     │ │
@@ -38,14 +38,14 @@
               PostgreSQL (app state + audit log)
 
    ┌───────────────────────────────────────────────────────┐
-   │         THE21SECRETS FRONTEND (Next.js, separate       │
+   │            THE21OS FRONTEND (Next.js, separate         │
    │         container, calls the REST API only)            │
    └───────────────────────────────────────────────────────┘
 ```
 
 ## Key Decision: the Command Center does not route through the network MCP transport
 
-The master prompt's own diagram (§2) shows `Claude → Control App → MCP → Meta/GA4`. The literal reading — the web dashboard's "Ask The21Secrets AI" box calling out to Claude, which calls back into our MCP server over HTTP — has a real problem: the Claude **API's** MCP connector (`mcp_toolset`) calls the MCP URL *from Anthropic's servers*, not from our backend. That would require our MCP endpoint to be publicly internet-reachable, which is a bigger attack surface than a system that can spend real ad money should have by default.
+The master prompt's own diagram (§2) shows `Claude → Control App → MCP → Meta/GA4`. The literal reading — the web dashboard's "Ask The21OS AI" box calling out to Claude, which calls back into our MCP server over HTTP — has a real problem: the Claude **API's** MCP connector (`mcp_toolset`) calls the MCP URL *from Anthropic's servers*, not from our backend. That would require our MCP endpoint to be publicly internet-reachable, which is a bigger attack surface than a system that can spend real ad money should have by default.
 
 **Decision**: the MCP tool functions are the single source of truth for every Meta/GA4 operation, but they're plain async Python functions in `meta/`, `ga4/`, `optimization/`, decorated once for MCP registration. The Command Center's tool-use loop calls the Claude Messages API directly from our backend with a standard custom `tools` list (not the remote `mcp_toolset` connector) and dispatches tool-call results to those same functions **in-process** — no network hop, no public exposure required for the primary usage path. The MCP server (STDIO, and Streamable HTTP behind Bearer auth on the Coolify-internal network) exists for the secondary path: connecting Claude Code or Claude Desktop directly to the same tools for ad-hoc personal debugging, per the master prompt's requirement that Claude get access "through our own self-hosted tools/MCP implementation." If STDIO/direct Claude Desktop access is ever needed from outside the home network, the Streamable HTTP endpoint can be put behind Coolify's domain+TLS deliberately, as an explicit opt-in — not by default.
 
@@ -65,7 +65,7 @@ This is Architecture choice **B (two containers)** from §24, resolved: frontend
 ## Module Layout (backend)
 
 ```
-the21secrets/
+the21os/
     app/                # FastAPI app assembly, ASGI mount of MCP sub-app
     api/                # REST routers: dashboard, campaigns, actions, rules, integrations, system
     core/                # shared config, calculations (CPA/ROAS/CTR/CPC/CPM), formatters

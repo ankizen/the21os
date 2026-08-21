@@ -3,7 +3,7 @@ import json
 import pytest
 from facebook_business.exceptions import FacebookRequestError
 
-from the21secrets.meta.client import _call_with_retry
+from the21os.meta.client import _call_with_retry
 
 
 def _rate_limit_error() -> FacebookRequestError:
@@ -21,7 +21,7 @@ def _permission_error() -> FacebookRequestError:
 
 
 def test_retries_on_rate_limit_then_succeeds(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("the21secrets.meta.client.time.sleep", lambda _seconds: None)
+    monkeypatch.setattr("the21os.meta.client.time.sleep", lambda _seconds: None)
     calls = {"count": 0}
 
     def flaky() -> str:
@@ -35,7 +35,7 @@ def test_retries_on_rate_limit_then_succeeds(monkeypatch: pytest.MonkeyPatch) ->
 
 
 def test_gives_up_after_max_retries(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("the21secrets.meta.client.time.sleep", lambda _seconds: None)
+    monkeypatch.setattr("the21os.meta.client.time.sleep", lambda _seconds: None)
     calls = {"count": 0}
 
     def always_rate_limited() -> str:

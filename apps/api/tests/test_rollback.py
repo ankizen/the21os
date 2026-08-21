@@ -3,9 +3,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from the21secrets.safety import rollback as rollback_module
-from the21secrets.safety.pipeline import WriteOutcome
-from the21secrets.safety.rollback import NotReversible, rollback
+from the21os.safety import rollback as rollback_module
+from the21os.safety.pipeline import WriteOutcome
+from the21os.safety.rollback import NotReversible, rollback
 
 
 class FakeDb:

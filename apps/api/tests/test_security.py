@@ -1,4 +1,4 @@
-from the21secrets.auth.security import (
+from the21os.auth.security import (
     create_session_token,
     generate_totp_secret,
     hash_password,

@@ -1,4 +1,4 @@
-from the21secrets.audit.redact import REDACTED, redact
+from the21os.audit.redact import REDACTED, redact
 
 
 def test_redacts_secret_shaped_keys() -> None:

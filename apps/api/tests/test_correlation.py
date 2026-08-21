@@ -1,4 +1,4 @@
-from the21secrets.core.correlation import correlate_campaigns
+from the21os.core.correlation import correlate_campaigns
 
 
 def test_joins_matching_campaign_ids() -> None:

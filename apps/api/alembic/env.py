@@ -6,9 +6,9 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
-from the21secrets.config import get_settings
-from the21secrets.db import models  # noqa: F401 — registers models on Base.metadata
-from the21secrets.db.base import Base
+from the21os.config import get_settings
+from the21os.db import models  # noqa: F401 — registers models on Base.metadata
+from the21os.db.base import Base
 
 config = context.config
 config.set_main_option("sqlalchemy.url", get_settings().database_url)

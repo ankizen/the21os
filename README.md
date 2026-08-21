@@ -1,4 +1,4 @@
-# The21Secrets AI Ads OS
+# The21OS — AI Ads
 
 Private, self-hosted Meta Ads + Google Analytics control platform for The21Secrets, built for Claude to
 operate through hard-coded safety guardrails. Not a SaaS product — single admin user, single business.
@@ -44,7 +44,7 @@ Requires Node 22+, Python 3.12+, `uv`, and a local PostgreSQL instance (or run o
 cd apps/api
 cp .env.example .env   # or hand-write one — see below for required vars
 uv run alembic upgrade head
-uv run uvicorn the21secrets.app:app --reload
+uv run uvicorn the21os.app:app --reload
 ```
 
 Backend `.env` needs: `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, Meta credentials

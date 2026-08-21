@@ -1,7 +1,7 @@
 import pytest
 
-from the21secrets.db.models import SystemSettings
-from the21secrets.safety.checks import (
+from the21os.db.models import SystemSettings
+from the21os.safety.checks import (
     SafetyViolation,
     check_budget_ceiling,
     check_budget_increase,

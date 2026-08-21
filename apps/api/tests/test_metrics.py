@@ -1,4 +1,4 @@
-from the21secrets.core.metrics import (
+from the21os.core.metrics import (
     calc_cpa,
     calc_cpc,
     calc_cpm,
