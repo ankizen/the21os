@@ -1,0 +1,37 @@
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+sa-key.json
+*credentials*.json
+
+# Node
+node_modules/
+apps/web/.next/
+apps/web/out/
+apps/web/.turbo/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.venv-*/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# DB / logs
+*.db
+*.sqlite3
+logs/
+audit.jsonl
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
