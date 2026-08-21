@@ -25,7 +25,12 @@ def test_session_token_roundtrip() -> None:
 
 def test_session_token_rejects_tampering() -> None:
     token = create_session_token("user-123")
-    tampered = token[:-1] + ("a" if token[-1] != "a" else "b")
+    # Flip a character in the interior of the payload segment, not the very
+    # last character of the token: base64url's final char(s) can have bits
+    # that don't affect the decoded bytes, so an edge flip can spuriously
+    # leave the signature valid. An interior flip always changes a full byte.
+    i = 5
+    tampered = token[:i] + ("a" if token[i] != "a" else "b") + token[i + 1 :]
     assert read_session_token(tampered) is None
 
 

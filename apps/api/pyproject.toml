@@ -33,5 +33,8 @@ ignore = [
     "B008", # Depends(...) in argument defaults is FastAPI's intended DI pattern
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"the21secrets/api/root.py" = ["E501"] # inline HTML template, not code to wrap
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

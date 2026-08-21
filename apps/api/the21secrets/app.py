@@ -21,7 +21,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title="The21Secrets AI Ads OS API", lifespan=lifespan)
+    app = FastAPI(title="The21OS — AI Ads API", lifespan=lifespan)
 
     app.add_middleware(
         CORSMiddleware,

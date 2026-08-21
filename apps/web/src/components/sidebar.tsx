@@ -21,9 +21,16 @@ export function Sidebar({ user }: { user: User }) {
 
   return (
     <aside className="flex h-screen w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
-      <div className="px-4 py-5">
-        <p className="text-sm font-semibold tracking-tight text-sidebar-foreground">The21Secrets</p>
-        <p className="text-xs text-muted-foreground">AI Ads OS</p>
+      <div className="flex items-center gap-2.5 px-4 py-5">
+        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-sidebar-primary to-[oklch(0.6_0.18_300)] text-xs font-heading font-bold text-primary-foreground">
+          21
+        </span>
+        <div>
+          <p className="font-heading text-sm font-semibold leading-tight tracking-tight text-sidebar-foreground">
+            The21OS
+          </p>
+          <p className="text-[11px] leading-tight text-muted-foreground">AI Ads</p>
+        </div>
       </div>
       <nav className="flex-1 space-y-0.5 px-2">
         {NAV_ITEMS.map((item) => {

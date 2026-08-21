@@ -35,3 +35,4 @@ audit.jsonl
 Thumbs.db
 .vscode/
 .idea/
+.claude/
