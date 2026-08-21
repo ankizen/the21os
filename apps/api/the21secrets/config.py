@@ -30,6 +30,14 @@ class Settings(BaseSettings):
     meta_default_ad_account_id: str | None = Field(default=None, alias="META_DEFAULT_AD_ACCOUNT_ID")
     meta_api_version: str = Field(default="v26.0", alias="META_API_VERSION")
 
+    # Google Analytics 4 — required from Phase 5 onward. The service account
+    # key is stored as raw JSON in one env var (not a file path) — simpler
+    # to inject on Coolify than mounting a secret file, and google-auth
+    # supports building credentials straight from a parsed dict.
+    google_service_account_json: str | None = Field(default=None, alias="GOOGLE_SERVICE_ACCOUNT_JSON")
+    google_project_id: str | None = Field(default=None, alias="GOOGLE_PROJECT_ID")
+    ga4_property_id: str | None = Field(default=None, alias="GA4_PROPERTY_ID")
+
     @property
     def is_prod(self) -> bool:
         return self.env == "prod"

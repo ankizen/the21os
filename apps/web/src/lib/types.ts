@@ -128,3 +128,34 @@ export interface MetaInsights {
   date_start: string | null;
   date_stop: string | null;
 }
+
+export interface Ga4PropertyInfo {
+  name: string;
+  display_name: string;
+  time_zone: string;
+  currency_code: string;
+}
+
+export interface Ga4ReportRow {
+  dimensions: Record<string, string>;
+  metrics: Record<string, number>;
+}
+
+export interface Ga4Report {
+  rows: Ga4ReportRow[];
+  row_count: number;
+}
+
+export interface CorrelationRow {
+  campaign_id: string;
+  campaign_name: string;
+  meta_spend: number;
+  meta_purchases: number;
+  meta_purchase_value: number;
+  ga4_sessions: number;
+  ga4_users: number;
+  ga4_key_events: number;
+  ga4_revenue: number;
+  has_ga4_data: boolean;
+  conversion_discrepancy: number | null;
+}

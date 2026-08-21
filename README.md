@@ -10,14 +10,16 @@ was reused, forked, or rejected from the community Meta/GA4 MCP ecosystem, and w
 
 ## Status
 
-**Phase 4 — Creatives.** Phases 1–3 (auth, read-only Meta data, gated writes) plus image upload, creative
-creation, and — now that a creative can actually exist — ad creation, completing what Phase 3 deferred.
-Full chain (image upload → creative → ad, all `PAUSED`) is live-verified against the real account. Video
-upload is implemented against the SDK's documented file-upload path but isn't live-verified the same way —
-there's no test video in this environment, see [`SECURITY.md`](SECURITY.md). Deployed and live at
-`app.ankithing.com` / `api.ankithing.com`, still defaulting to `DRY_RUN`. GA4 and the MCP tool layer don't
-exist yet, and creative performance/fatigue-detection is Phase 7 (optimization) scope — those stay honest
-"not connected"/"not built" states, never fake data. See the phase list in
+**Phase 5 — Google Analytics 4.** Phases 1–4 (auth, read/write Meta Ads with a real safety pipeline,
+creatives) plus real GA4 reporting — landing pages, campaigns, traffic sources, key events, revenue — via
+the official Data and Admin API clients, live-verified against the real property. The headline feature:
+`core/correlation.py` joins Meta campaign spend/purchases with GA4 sessions/key events by campaign ID (this
+account's UTM happens to use the literal Meta campaign ID, confirmed against real data — see
+[`GA4_SETUP.md`](GA4_SETUP.md)), surfacing real Meta-vs-GA4 attribution gaps on the Compare page instead of
+pretending the two sources agree. Deployed and live at `app.ankithing.com` / `api.ankithing.com`, still
+defaulting to `DRY_RUN`. The MCP tool layer doesn't exist yet, and creative performance/fatigue-detection is
+Phase 7 (optimization) scope — those stay honest "not connected"/"not built" states, never fake data. See
+the phase list in
 [`docs/research/architecture-decision.md`](docs/research/architecture-decision.md#module-layout-backend) for
 what's next.
 
@@ -45,10 +47,9 @@ uv run alembic upgrade head
 uv run uvicorn the21secrets.app:app --reload
 ```
 
-Backend `.env` needs: `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and (from Phase 2)
-`META_APP_ID` / `META_APP_SECRET` / `META_ACCESS_TOKEN` / `META_DEFAULT_AD_ACCOUNT_ID` — see
-[`.env.example`](.env.example) for the full set and [`META_SETUP.md`](META_SETUP.md) for how to get the
-Meta values.
+Backend `.env` needs: `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, Meta credentials
+(see [`META_SETUP.md`](META_SETUP.md)), and GA4 credentials (see [`GA4_SETUP.md`](GA4_SETUP.md)) — full
+list in [`.env.example`](.env.example).
 
 **Frontend**
 
