@@ -9,13 +9,21 @@ from the21os.core.metrics import (
 )
 
 
-def test_extract_purchases_sums_matching_action_types() -> None:
+def test_extract_purchases_prefers_omni_purchase_not_sum() -> None:
+    # Meta reports the same web-pixel purchase under both "purchase" and
+    # "omni_purchase" — summing both would double-count it (the real bug:
+    # it inflated a live account's today-purchases from 3 to 6).
     actions = [
         {"action_type": "purchase", "value": "3"},
-        {"action_type": "omni_purchase", "value": "2"},
+        {"action_type": "omni_purchase", "value": "3"},
         {"action_type": "link_click", "value": "50"},
     ]
-    assert extract_purchases(actions) == 5.0
+    assert extract_purchases(actions) == 3.0
+
+
+def test_extract_purchases_falls_back_to_purchase_when_omni_missing() -> None:
+    actions = [{"action_type": "purchase", "value": "4"}]
+    assert extract_purchases(actions) == 4.0
 
 
 def test_extract_purchases_handles_none_and_empty() -> None:
@@ -23,8 +31,11 @@ def test_extract_purchases_handles_none_and_empty() -> None:
     assert extract_purchases([]) == 0.0
 
 
-def test_extract_purchase_value() -> None:
-    action_values = [{"action_type": "purchase", "value": "199.98"}]
+def test_extract_purchase_value_prefers_omni_purchase_not_sum() -> None:
+    action_values = [
+        {"action_type": "purchase", "value": "199.98"},
+        {"action_type": "omni_purchase", "value": "199.98"},
+    ]
     assert extract_purchase_value(action_values) == 199.98
 
 
