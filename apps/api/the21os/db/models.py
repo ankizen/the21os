@@ -41,6 +41,9 @@ class SystemSettings(Base):
     operational_mode: Mapped[OperationalMode] = mapped_column(
         Enum(OperationalMode), default=OperationalMode.DRY_RUN
     )
+    # Overrides the ANTHROPIC_API_KEY env var when set — lets a short-lived
+    # key be rotated from the Integrations page without a redeploy.
+    anthropic_api_key: Mapped[str | None] = mapped_column(String(255), default=None)
     max_daily_spend_cents: Mapped[int] = mapped_column(Integer, default=150_000)
     max_campaign_budget_cents: Mapped[int] = mapped_column(Integer, default=200_000)
     max_budget_increase_pct: Mapped[int] = mapped_column(Integer, default=20)

@@ -165,6 +165,8 @@ export interface CommandCenterAskResponse {
 
 export interface CommandCenterStatus {
   configured: boolean;
+  source: "database" | "environment" | null;
+  key_preview: string | null;
 }
 
 export interface CorrelationRow {

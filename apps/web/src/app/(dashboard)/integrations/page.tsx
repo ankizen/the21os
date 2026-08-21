@@ -1,12 +1,16 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/page-header";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import type { CommandCenterStatus, Ga4PropertyInfo, MetaAccountInfo } from "@/lib/types";
 
 export default function IntegrationsPage() {
@@ -99,14 +103,64 @@ export default function IntegrationsPage() {
               </Badge>
             )}
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">In-process tool access for the AI Command Center</p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {claude.data?.configured ? "32 tools — reads + safety-gated writes" : "Set ANTHROPIC_API_KEY."}
-            </p>
+          <CardContent className="space-y-3">
+            <div>
+              <p className="text-sm text-muted-foreground">In-process tool access for the AI Command Center</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {claude.data?.configured
+                  ? `32 tools — reads + safety-gated writes${
+                      claude.data.source === "database" ? ` · key ${claude.data.key_preview}` : " · via ANTHROPIC_API_KEY env"
+                    }`
+                  : "Set a key below, or ANTHROPIC_API_KEY in the environment."}
+              </p>
+            </div>
+            <ClaudeKeyForm />
           </CardContent>
         </Card>
       </div>
     </>
+  );
+}
+
+function ClaudeKeyForm() {
+  const queryClient = useQueryClient();
+  const [apiKey, setApiKey] = useState("");
+
+  const save = useMutation({
+    mutationFn: (key: string) =>
+      api.put<CommandCenterStatus>("/api/command-center/key", { api_key: key }),
+    onSuccess: (status) => {
+      queryClient.setQueryData(["command-center", "status"], status);
+      setApiKey("");
+      toast.success("Anthropic API key updated");
+    },
+    onError: (err) => {
+      const detail =
+        err instanceof ApiError && typeof err.body === "object" && err.body && "detail" in err.body
+          ? String((err.body as { detail: unknown }).detail)
+          : "Could not save the key";
+      toast.error(detail);
+    },
+  });
+
+  return (
+    <div className="flex gap-2 border-t pt-3">
+      <Input
+        type="password"
+        placeholder="sk-ant-…"
+        value={apiKey}
+        onChange={(e) => setApiKey(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && apiKey.trim() && !save.isPending) save.mutate(apiKey.trim());
+        }}
+      />
+      <Button
+        size="sm"
+        disabled={save.isPending || !apiKey.trim()}
+        onClick={() => save.mutate(apiKey.trim())}
+      >
+        {save.isPending ? "Saving…" : "Update key"}
+      </Button>
+    </div>
   );
 }

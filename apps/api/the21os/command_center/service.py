@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from the21os.command_center.pricing import estimate_cost_cents
 from the21os.command_center.tools import TOOL_SCHEMAS, ToolContext, run_tool
 from the21os.config import get_settings
-from the21os.db.models import ClaudeUsage, User
+from the21os.db.models import ClaudeUsage, SystemSettings, User
 
 SYSTEM_PROMPT = (
     "You are the AI Command Center for The21OS, a private Meta Ads + GA4 control "
@@ -35,11 +35,17 @@ _MAX_TOOL_ITERATIONS = 8
 _MAX_TOKENS = 4096
 
 
-def _client() -> AsyncAnthropic:
-    settings = get_settings()
-    if not settings.anthropic_api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY is not configured")
-    return AsyncAnthropic(api_key=settings.anthropic_api_key)
+async def _client(db: AsyncSession) -> AsyncAnthropic:
+    """A key saved in SystemSettings (via the Integrations page) overrides
+    the ANTHROPIC_API_KEY env var — lets a short-lived key be rotated
+    without a redeploy."""
+    row = await db.get(SystemSettings, 1)
+    api_key = (row.anthropic_api_key if row else None) or get_settings().anthropic_api_key
+    if not api_key:
+        raise RuntimeError(
+            "ANTHROPIC_API_KEY is not configured — set it on the Integrations page or in the environment."
+        )
+    return AsyncAnthropic(api_key=api_key)
 
 
 async def _log_usage(db: AsyncSession, user: User, model: str, input_tokens: int, output_tokens: int) -> None:
@@ -64,7 +70,7 @@ async def ask(db: AsyncSession, user: User, messages: list[dict]) -> dict:
     (frontend) is responsible for keeping it across turns since this system
     has no persistent chat history store."""
     settings = get_settings()
-    client = _client()
+    client = await _client(db)
     ctx = ToolContext(db=db, user=user)
     conversation = list(messages)
     trace: list[dict] = []
