@@ -14,15 +14,16 @@ RUN npm run build
 
 
 FROM node:22-slim AS runner
-RUN useradd --create-home --uid 1000 appuser
+# node:22-slim already ships a non-root `node` user at uid 1000 — reuse it
+# instead of creating a second one (useradd would collide on that uid).
 WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=appuser:appuser /app/.next/standalone ./
-COPY --from=builder --chown=appuser:appuser /app/.next/static ./.next/static
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 
-USER appuser
+USER node
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
