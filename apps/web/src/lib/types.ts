@@ -41,3 +41,60 @@ export interface SystemHealth {
   status: "ok" | "degraded";
   database: "ok" | "unreachable";
 }
+
+export interface MetaAccountInfo {
+  id: string;
+  name: string | null;
+  currency: string;
+  timezone_name: string;
+  account_status: number;
+  amount_spent: string;
+}
+
+export interface MetaCampaign {
+  id: string;
+  name: string;
+  status: string;
+  effective_status: string;
+  objective: string | null;
+  daily_budget: string | null;
+  lifetime_budget: string | null;
+}
+
+export interface MetaAdSet {
+  id: string;
+  name: string;
+  status: string;
+  effective_status: string;
+  campaign_id: string | null;
+  optimization_goal: string | null;
+  daily_budget: string | null;
+  lifetime_budget: string | null;
+}
+
+export interface MetaAd {
+  id: string;
+  name: string;
+  status: string;
+  effective_status: string;
+  adset_id: string | null;
+  campaign_id: string | null;
+}
+
+export interface MetaInsights {
+  entity_id: string | null;
+  entity_name: string | null;
+  impressions: number;
+  clicks: number;
+  spend: number;
+  reach: number | null;
+  ctr: number | null;
+  cpc: number | null;
+  cpm: number | null;
+  purchases: number;
+  purchase_value: number;
+  cpa: number | null;
+  roas: number | null;
+  date_start: string | null;
+  date_stop: string | null;
+}

@@ -10,9 +10,11 @@ was reused, forked, or rejected from the community Meta/GA4 MCP ecosystem, and w
 
 ## Status
 
-**Phase 1 — Project foundation.** Auth, database, and the app shell are real and working. Meta Ads, GA4,
-and the MCP tool layer do not exist yet — every dashboard page for those either shows honest "not connected
-yet" empty state or is absent, never fake data. See the phase list in
+**Phase 2 — Meta Ads read-only.** Auth, database, and the app shell (Phase 1) plus a real, live Meta
+Marketing API integration: account info, campaigns, ad sets, ads, and insights (spend/CPA/ROAS/CTR), backed
+by the official `facebook-business` SDK. Deployed and live at `app.ankithing.com` / `api.ankithing.com`.
+GA4 and the MCP tool layer don't exist yet — those pages still show an honest "not connected yet" state,
+never fake data. See the phase list in
 [`docs/research/architecture-decision.md`](docs/research/architecture-decision.md#module-layout-backend) for
 what's next.
 
@@ -40,9 +42,10 @@ uv run alembic upgrade head
 uv run uvicorn the21secrets.app:app --reload
 ```
 
-Backend `.env` needs: `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` (see
-[`.env.example`](.env.example) at the repo root for the full set — the backend only reads the Phase 1
-subset today).
+Backend `.env` needs: `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and (from Phase 2)
+`META_APP_ID` / `META_APP_SECRET` / `META_ACCESS_TOKEN` / `META_DEFAULT_AD_ACCOUNT_ID` — see
+[`.env.example`](.env.example) for the full set and [`META_SETUP.md`](META_SETUP.md) for how to get the
+Meta values.
 
 **Frontend**
 
@@ -63,10 +66,8 @@ cd apps/web && npx tsc --noEmit && npx eslint .
 
 ## Deployment
 
-One Coolify Service (Docker Compose) — see [`docker-compose.yml`](docker-compose.yml) and
-[`.env.example`](.env.example). Full step-by-step Coolify setup is written once Phase 1 has something
-worth deploying end-to-end; for now the compose file is Coolify-ready (health checks, non-root containers,
-internal networking) if you want to stand it up early.
+Live on Coolify as a single docker-compose Service — see [`COOLIFY.md`](COOLIFY.md) for the actual setup
+(project/environment names, domains, env vars) and how to redeploy or reproduce it.
 
 ## Security
 

@@ -20,6 +20,16 @@ class Settings(BaseSettings):
 
     cors_origins: str = Field(default="http://localhost:3000", alias="CORS_ORIGINS")
 
+    # Meta Marketing API — required from Phase 2 onward. Left optional here
+    # (not required=True at the Settings level) so the app still boots
+    # cleanly before these are configured; meta/client.py fails loudly if a
+    # caller actually tries to use it without them.
+    meta_app_id: str | None = Field(default=None, alias="META_APP_ID")
+    meta_app_secret: str | None = Field(default=None, alias="META_APP_SECRET")
+    meta_access_token: str | None = Field(default=None, alias="META_ACCESS_TOKEN")
+    meta_default_ad_account_id: str | None = Field(default=None, alias="META_DEFAULT_AD_ACCOUNT_ID")
+    meta_api_version: str = Field(default="v26.0", alias="META_API_VERSION")
+
     @property
     def is_prod(self) -> bool:
         return self.env == "prod"
