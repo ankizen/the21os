@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from the21secrets.api import api_router
+from the21secrets.api.root import router as root_router
 from the21secrets.bootstrap import seed_admin_user
 from the21secrets.config import get_settings
 from the21secrets.db.base import get_db
@@ -30,6 +31,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    app.include_router(root_router)
     app.include_router(api_router)
     return app
 
