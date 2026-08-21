@@ -5,7 +5,7 @@ keys, passwords, or session cookies."""
 import re
 
 _SECRET_KEY_PATTERN = re.compile(
-    r"(token|secret|password|passwd|api_key|apikey|authorization|cookie|totp|private_key)",
+    r"(token|secret|password|passwd|key|authorization|cookie|totp)",
     re.IGNORECASE,
 )
 REDACTED = "***REDACTED***"

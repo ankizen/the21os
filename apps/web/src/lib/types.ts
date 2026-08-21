@@ -169,6 +169,17 @@ export interface CommandCenterStatus {
   key_preview: string | null;
 }
 
+export interface WordPressStatus {
+  configured: boolean;
+  site_url: string | null;
+  wp_connected: boolean | null;
+  wp_user: string | null;
+  wp_error: string | null;
+  woo_connected: boolean | null;
+  woo_order_count: number | null;
+  woo_error: string | null;
+}
+
 export interface CorrelationRow {
   campaign_id: string;
   campaign_name: string;

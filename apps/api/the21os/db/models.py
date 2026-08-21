@@ -113,6 +113,26 @@ class ApprovalRequest(Base):
     decided_by: Mapped[str | None] = mapped_column(String(255), default=None)
 
 
+class WordPressConnection(Base):
+    """Singleton row (id always 1) holding the WordPress/WooCommerce
+    connection — editable from the Integrations page so credentials can be
+    set/rotated without a redeploy, same pattern as SystemSettings.anthropic_api_key.
+    app_password is a WordPress Application Password (not the real login
+    password); woo_consumer_key/secret are WooCommerce REST API keys."""
+
+    __tablename__ = "wordpress_connection"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    site_url: Mapped[str | None] = mapped_column(String(512), default=None)
+    app_username: Mapped[str | None] = mapped_column(String(255), default=None)
+    app_password: Mapped[str | None] = mapped_column(String(255), default=None)
+    woo_consumer_key: Mapped[str | None] = mapped_column(String(255), default=None)
+    woo_consumer_secret: Mapped[str | None] = mapped_column(String(255), default=None)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 class ClaudeUsage(Base):
     """Per-request Claude API usage, for cost observability (master prompt
     SS31). cost_cents is computed at write time from a hardcoded per-model

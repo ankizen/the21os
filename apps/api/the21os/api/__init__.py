@@ -8,6 +8,7 @@ from the21os.api.ga4 import router as ga4_router
 from the21os.api.meta import router as meta_router
 from the21os.api.settings import router as settings_router
 from the21os.api.system import router as system_router
+from the21os.api.wordpress import router as wordpress_router
 from the21os.auth.router import router as auth_router
 
 api_router = APIRouter()
@@ -20,3 +21,4 @@ api_router.include_router(approvals_router)
 api_router.include_router(ga4_router)
 api_router.include_router(analytics_router)
 api_router.include_router(command_center_router)
+api_router.include_router(wordpress_router)
