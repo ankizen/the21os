@@ -27,3 +27,38 @@ async def list_adsets(campaign_id: str | None = None, account_id: str | None = N
 
     rows = await call_meta(fetch)
     return [AdSet.model_validate(r) for r in rows]
+
+
+async def get_adset(adset_id: str) -> AdSet:
+    def fetch() -> dict:
+        ensure_initialized()
+        adset = FbAdSet(adset_id)
+        adset.api_get(fields=_FIELDS)
+        return dict(adset)
+
+    data = await call_meta(fetch)
+    return AdSet.model_validate(data)
+
+
+async def update_adset_budget(adset_id: str, daily_budget_cents: int) -> AdSet:
+    def fetch() -> dict:
+        ensure_initialized()
+        adset = FbAdSet(adset_id)
+        adset.api_update(params={FbAdSet.Field.daily_budget: str(daily_budget_cents)})
+        adset.api_get(fields=_FIELDS)
+        return dict(adset)
+
+    data = await call_meta(fetch)
+    return AdSet.model_validate(data)
+
+
+async def set_adset_status(adset_id: str, status: str) -> AdSet:
+    def fetch() -> dict:
+        ensure_initialized()
+        adset = FbAdSet(adset_id)
+        adset.api_update(params={FbAdSet.Field.status: status})
+        adset.api_get(fields=_FIELDS)
+        return dict(adset)
+
+    data = await call_meta(fetch)
+    return AdSet.model_validate(data)

@@ -1,7 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { Pause, Play } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -16,6 +18,9 @@ import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { api, ApiError } from "@/lib/api";
 import type { MetaAd } from "@/lib/types";
+import { useWriteAction } from "@/lib/writes";
+
+const INVALIDATE = [["meta", "ads"]];
 
 export default function AdsPage() {
   const { data, isLoading, error } = useQuery<MetaAd[]>({
@@ -24,14 +29,14 @@ export default function AdsPage() {
     retry: false,
   });
 
+  const pause = useWriteAction((v) => `/api/meta/ads/${v.id}/pause`, { invalidate: INVALIDATE });
+  const resume = useWriteAction((v) => `/api/meta/ads/${v.id}/resume`, { invalidate: INVALIDATE });
+
   const notConnected = error instanceof ApiError && error.status === 503;
 
   return (
     <>
-      <PageHeader
-        title="Ads"
-        description="Status per ad. Creative previews ship in Phase 4."
-      />
+      <PageHeader title="Ads" description="Status per ad. Creative previews ship in Phase 4." />
 
       {isLoading ? (
         <Skeleton className="h-96 w-full" />
@@ -49,21 +54,39 @@ export default function AdsPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Ad set ID</TableHead>
                   <TableHead>Campaign ID</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.map((a) => (
-                  <TableRow key={a.id}>
-                    <TableCell className="max-w-64 truncate font-medium">{a.name}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={a.effective_status} />
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{a.adset_id ?? "—"}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {a.campaign_id ?? "—"}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {data.map((a) => {
+                  const isActive = a.effective_status === "ACTIVE";
+                  return (
+                    <TableRow key={a.id}>
+                      <TableCell className="max-w-64 truncate font-medium">{a.name}</TableCell>
+                      <TableCell>
+                        <StatusBadge status={a.effective_status} />
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{a.adset_id ?? "—"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {a.campaign_id ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-7"
+                            title={isActive ? "Pause" : "Resume"}
+                            disabled={pause.isPending || resume.isPending}
+                            onClick={() => (isActive ? pause : resume).mutate({ id: a.id })}
+                          >
+                            {isActive ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

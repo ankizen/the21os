@@ -10,11 +10,14 @@ was reused, forked, or rejected from the community Meta/GA4 MCP ecosystem, and w
 
 ## Status
 
-**Phase 2 — Meta Ads read-only.** Auth, database, and the app shell (Phase 1) plus a real, live Meta
-Marketing API integration: account info, campaigns, ad sets, ads, and insights (spend/CPA/ROAS/CTR), backed
-by the official `facebook-business` SDK. Deployed and live at `app.ankithing.com` / `api.ankithing.com`.
-GA4 and the MCP tool layer don't exist yet — those pages still show an honest "not connected yet" state,
-never fake data. See the phase list in
+**Phase 3 — Meta Ads writes.** Phases 1–2 (auth, read-only Meta data) plus real writes — create campaign,
+budget updates, pause/resume, duplicate — all gated by a real safety pipeline (hard ceilings, operational
+modes, an approval queue, rollback), not just a UI that pretends to. Defaults to `DRY_RUN`: nothing touches
+the real account until the mode is deliberately changed on the Rules page. Deployed and live at
+`app.ankithing.com` / `api.ankithing.com`. Ad set/ad *creation* and full campaign duplication (ad
+sets/ads/creatives, not just the campaign shell) are deliberately deferred — see [`SECURITY.md`](SECURITY.md)
+for exactly what's gated and how. GA4 and the MCP tool layer don't exist yet — those pages still show an
+honest "not connected yet" state, never fake data. See the phase list in
 [`docs/research/architecture-decision.md`](docs/research/architecture-decision.md#module-layout-backend) for
 what's next.
 

@@ -25,3 +25,26 @@ async def list_ads(adset_id: str | None = None, account_id: str | None = None) -
 
     rows = await call_meta(fetch)
     return [Ad.model_validate(r) for r in rows]
+
+
+async def get_ad(ad_id: str) -> Ad:
+    def fetch() -> dict:
+        ensure_initialized()
+        ad = FbAd(ad_id)
+        ad.api_get(fields=_FIELDS)
+        return dict(ad)
+
+    data = await call_meta(fetch)
+    return Ad.model_validate(data)
+
+
+async def set_ad_status(ad_id: str, status: str) -> Ad:
+    def fetch() -> dict:
+        ensure_initialized()
+        ad = FbAd(ad_id)
+        ad.api_update(params={FbAd.Field.status: status})
+        ad.api_get(fields=_FIELDS)
+        return dict(ad)
+
+    data = await call_meta(fetch)
+    return Ad.model_validate(data)

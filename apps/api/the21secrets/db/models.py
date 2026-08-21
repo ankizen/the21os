@@ -74,3 +74,37 @@ class AuditLog(Base):
     after_json: Mapped[dict | None] = mapped_column(JSON, default=None)
     decision_reason: Mapped[str | None] = mapped_column(String(512), default=None)
     success: Mapped[bool] = mapped_column(Boolean)
+
+
+class ApprovalStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    EXPIRED = "EXPIRED"
+
+
+class ApprovalRequest(Base):
+    """A write action queued for human sign-off — created whenever the
+    safety pipeline decides a write needs approval (SUPERVISED mode, or
+    AUTONOMOUS mode over the require_approval_over threshold). Approving
+    replays `params_json` through the same executor that would have run
+    immediately, so it's audited identically either way."""
+
+    __tablename__ = "approval_requests"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+    action: Mapped[str] = mapped_column(String(128))
+    entity: Mapped[str | None] = mapped_column(String(64), default=None)
+    entity_id: Mapped[str | None] = mapped_column(String(128), default=None)
+    summary: Mapped[str] = mapped_column(String(512))
+    params_json: Mapped[dict] = mapped_column(JSON)
+    before_json: Mapped[dict | None] = mapped_column(JSON, default=None)
+    status: Mapped[ApprovalStatus] = mapped_column(
+        Enum(ApprovalStatus), default=ApprovalStatus.PENDING, index=True
+    )
+    requested_by: Mapped[str] = mapped_column(String(255))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    decided_by: Mapped[str | None] = mapped_column(String(255), default=None)

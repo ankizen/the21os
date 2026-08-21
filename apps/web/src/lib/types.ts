@@ -81,6 +81,21 @@ export interface MetaAd {
   campaign_id: string | null;
 }
 
+export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED";
+
+export interface ApprovalRequestEntry {
+  id: string;
+  created_at: string;
+  action: string;
+  entity: string | null;
+  entity_id: string | null;
+  summary: string;
+  status: ApprovalStatus;
+  requested_by: string;
+  decided_at: string | null;
+  decided_by: string | null;
+}
+
 export interface MetaInsights {
   entity_id: string | null;
   entity_name: string | null;

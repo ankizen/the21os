@@ -1,9 +1,8 @@
 # Security
 
-This system can (from Phase 2 onward) spend real advertising money and read private analytics data. It's
-treated like a financial-control system, not an internal admin panel. This document covers what's actually
-implemented today; the full safety-layer design for write operations (Phase 3+) is in
-[`docs/research/architecture-decision.md`](docs/research/architecture-decision.md).
+This system can spend real advertising money and read private analytics data. It's treated like a
+financial-control system, not an internal admin panel. This document covers what's actually implemented
+today.
 
 ## Authentication (implemented)
 
@@ -28,14 +27,38 @@ implemented today; the full safety-layer design for write operations (Phase 3+) 
   environment variables / Coolify secrets only, never in a database row.
 - `.env` files are gitignored; `.env.example` documents every variable without real values.
 
-## Safety layer (Phase 3+, ceilings modeled now)
+## Safety layer (implemented, Phase 3)
 
-The `system_settings` table already models the operational-mode gate and hard-coded ceilings
-(`DRY_RUN → READ_ONLY → SUPERVISED → AUTONOMOUS`, max daily spend, max campaign budget, max budget increase
-%, max new campaigns/day, max ads/campaign, approval threshold) that every future Meta/GA4 write must pass
-through — editable now via the Rules page, enforced in code once there's anything to enforce against. Claude
-is never trusted to self-enforce a limit stated only in a prompt; see
-[`docs/research/architecture-decision.md`](docs/research/architecture-decision.md#operational-modes).
+Every Meta write — REST API today, MCP and the Command Center in later phases — goes through the exact
+same pipeline (`safety/pipeline.py::run_write`), regardless of caller:
+
+```
+validate → hard ceilings (never bypassed by mode) → operational-mode branch → execute or queue → audit
+```
+
+- **Hard ceilings** (`safety/checks.py`), checked before the mode branch and never overridden by it: max
+  campaign budget, max daily-budget-increase %, max new campaigns/day (counted from today's successful
+  `campaign.create` audit entries), max daily account spend (checked live against Meta's insights for
+  spend-increasing writes). A budget *decrease*, of any size, never trips the increase-% ceiling.
+- **Operational mode** (`system_settings.operational_mode`, editable on the Rules page):
+  `READ_ONLY` rejects every write · `DRY_RUN` (the default) validates and audits but never calls Meta ·
+  `SUPERVISED` queues every write as an `ApprovalRequest` · `AUTONOMOUS` executes immediately unless the
+  amount exceeds `require_approval_over`, in which case it's queued the same as SUPERVISED.
+- **Approvals** (`/api/approvals`): queued writes are replayed byte-for-byte through the same executor that
+  would have run them immediately when approved — approving isn't a different code path from auto-execute,
+  just a later one.
+- **All creates are PAUSED** — `meta/campaigns.py::create_campaign` hard-codes `status=PAUSED`; there's no
+  parameter that lets a caller (including Claude) request `ACTIVE` on create.
+- **Rollback** (`safety/rollback.py`) reuses `audit_log.before_json`/`after_json` rather than a separate
+  table — only pause/resume and budget changes are reversible, and rollback is itself just another write
+  through the same pipeline (reverting a budget cut back up can still hit the increase-% ceiling).
+- **Not yet wired**: `meta/guards.py` blocks Advantage+ Shopping/App campaign creation (Meta disallows this
+  entirely via API as of 2026-05-19), but `create_campaign`'s signature doesn't expose the field that would
+  trigger it — the guard is real and tested, just structurally unreachable until a future phase exposes
+  richer campaign parameters (e.g. to Claude via MCP).
+
+Claude is never trusted to self-enforce a limit stated only in a prompt — every check above runs in Python,
+not in a system prompt.
 
 ## What Claude never receives directly
 
