@@ -34,12 +34,16 @@ def _to_response(user: User) -> UserResponse:
     return UserResponse(id=str(user.id), email=user.email, totp_enabled=user.totp_enabled)
 
 
-def _set_session_cookie(response: Response, user_id: str) -> None:
+def _set_session_cookie(response: Response, user_id: str, remember: bool) -> None:
     settings = get_settings()
     response.set_cookie(
         key=SESSION_COOKIE_NAME,
         value=create_session_token(user_id),
-        max_age=settings.session_max_age_seconds,
+        # "Remember me" off -> a browser-session cookie (no max_age), cleared
+        # when the browser closes. The signed token itself is still valid for
+        # session_max_age_seconds either way; this only controls how long the
+        # browser holds onto it.
+        max_age=settings.session_max_age_seconds if remember else None,
         httponly=True,
         secure=settings.is_prod,
         samesite="lax",
@@ -88,7 +92,7 @@ async def login(
 
     user.last_login_at = datetime.now(UTC)
     await db.commit()
-    _set_session_cookie(response, str(user.id))
+    _set_session_cookie(response, str(user.id), body.remember)
     await write_audit_log(
         db, request_id=request_id, actor=body.email, source="rest_api", action="auth.login", success=True
     )

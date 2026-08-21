@@ -18,7 +18,7 @@ export function useCurrentUser() {
 export function useLogin() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: { email: string; password: string; totp_code?: string }) =>
+    mutationFn: (body: { email: string; password: string; totp_code?: string; remember?: boolean }) =>
       api.post<LoginResponse>("/api/auth/login", body),
     onSuccess: (data) => {
       if (data.user) {

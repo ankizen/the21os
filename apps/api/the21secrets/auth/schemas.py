@@ -5,6 +5,7 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
     totp_code: str | None = None
+    remember: bool = True
 
 
 class LoginResponse(BaseModel):
