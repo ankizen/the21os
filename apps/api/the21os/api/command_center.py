@@ -1,5 +1,6 @@
 from typing import Any
 
+from anthropic import APIStatusError
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -50,4 +51,7 @@ async def ask_command_center(
         result = await ask(db, user, body.messages)
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
+    except APIStatusError as e:
+        detail = e.body.get("error", {}).get("message", str(e)) if isinstance(e.body, dict) else str(e)
+        raise HTTPException(status_code=502, detail=f"Claude API: {detail}") from e
     return AskResponse(**result)
