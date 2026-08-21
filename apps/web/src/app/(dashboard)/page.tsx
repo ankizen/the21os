@@ -2,9 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
+  BadgeCheck,
   CheckCircle2,
   DollarSign,
   Megaphone,
+  Package,
   Plug,
   ShieldCheck,
   ShoppingCart,
@@ -24,7 +26,7 @@ import { describeAuditEntry } from "@/lib/audit-format";
 import { api, ApiError } from "@/lib/api";
 import { formatCurrency, formatNumber, formatRatio } from "@/lib/format";
 import { relativeTime } from "@/lib/relative-time";
-import type { AuditLogEntry, MetaAccountInfo, MetaInsights } from "@/lib/types";
+import type { AuditLogEntry, MetaAccountInfo, MetaInsights, WooOrderSummary } from "@/lib/types";
 
 const QUICK_ACTIONS = [
   { href: "/campaigns", label: "Campaigns", icon: Megaphone },
@@ -49,9 +51,15 @@ export default function OverviewPage() {
     queryKey: ["audit", "recent"],
     queryFn: () => api.get<AuditLogEntry[]>("/api/audit?limit=5"),
   });
+  const wooToday = useQuery<WooOrderSummary>({
+    queryKey: ["wordpress", "orders", "summary", "today"],
+    queryFn: () => api.get<WooOrderSummary>("/api/integrations/wordpress/orders/summary?date_preset=today"),
+    retry: false,
+  });
 
   const notConnected = account.error instanceof ApiError && account.error.status === 503;
   const connected = account.isSuccess;
+  const wooConnected = wooToday.isSuccess;
 
   return (
     <>
@@ -86,6 +94,29 @@ export default function OverviewPage() {
           caption={connected ? "Today" : "Not connected"}
         />
       </div>
+
+      {(wooConnected || wooToday.isLoading) && (
+        <div className="mt-4">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <BadgeCheck className="size-3.5 text-emerald-500" />
+            WooCommerce — real completed orders, not pixel-based
+          </p>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <StatCard
+              icon={Package}
+              label="Real Revenue"
+              value={wooToday.data ? formatCurrency(wooToday.data.revenue) : "—"}
+              caption="Today"
+            />
+            <StatCard
+              icon={ShoppingCart}
+              label="Real Orders"
+              value={wooToday.data ? formatNumber(wooToday.data.order_count) : "—"}
+              caption="Today"
+            />
+          </div>
+        </div>
+      )}
 
       {connected ? (
         <Card className="mt-4 border-emerald-600/25">

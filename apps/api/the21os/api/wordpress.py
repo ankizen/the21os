@@ -1,7 +1,9 @@
 import uuid
+from collections.abc import Awaitable, Callable
+from typing import TypeVar
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,10 +12,13 @@ from the21os.auth.dependencies import get_current_user
 from the21os.db.base import get_db
 from the21os.db.models import User, WordPressConnection
 from the21os.wordpress.client import WordPressNotConfigured, check_woo_connection, check_wp_connection
+from the21os.wordpress.orders import date_preset_range, list_orders, orders_summary
 
 router = APIRouter(
     prefix="/api/integrations/wordpress", tags=["wordpress"], dependencies=[Depends(get_current_user)]
 )
+
+T = TypeVar("T")
 
 
 class WordPressStatus(BaseModel):
@@ -111,3 +116,54 @@ async def connect_wordpress(
         decision_reason=f"WordPress connection updated ({site_url})",
     )
     return await _status(db)
+
+
+class OrderSummary(BaseModel):
+    date_preset: str
+    order_count: int
+    revenue: float
+    currency: str | None
+    attributed_order_count: int
+
+
+class OrderEntry(BaseModel):
+    id: int
+    status: str
+    date_created: str | None
+    total: float
+    currency: str | None
+    utm_campaign: str | None
+    utm_source: str | None
+    source_type: str | None
+
+
+async def _run_orders(fn: Callable[[], Awaitable[T]]) -> T:
+    try:
+        return await fn()
+    except WordPressNotConfigured as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"WooCommerce API request failed: {e}") from e
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+
+
+@router.get("/orders/summary", response_model=OrderSummary)
+async def orders_summary_endpoint(
+    date_preset: str = Query(default="today"), db: AsyncSession = Depends(get_db)
+) -> OrderSummary:
+    row = await _get_or_create(db)
+    return await _run_orders(lambda: orders_summary(row, date_preset))
+
+
+@router.get("/orders/recent", response_model=list[OrderEntry])
+async def recent_orders(
+    date_preset: str = Query(default="today"), db: AsyncSession = Depends(get_db)
+) -> list[OrderEntry]:
+    row = await _get_or_create(db)
+
+    async def _fetch():
+        after, before = date_preset_range(date_preset)
+        return await list_orders(row, after, before)
+
+    return await _run_orders(_fetch)

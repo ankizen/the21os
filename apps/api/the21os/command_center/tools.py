@@ -12,12 +12,13 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
+import httpx
 from facebook_business.exceptions import FacebookRequestError
 from google.api_core.exceptions import GoogleAPICallError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from the21os.core.correlation import correlate_campaigns
-from the21os.db.models import User
+from the21os.db.models import User, WordPressConnection
 from the21os.ga4 import accounts as ga4_accounts
 from the21os.ga4 import realtime as ga4_realtime
 from the21os.ga4 import reports as ga4_reports
@@ -27,6 +28,8 @@ from the21os.meta import ads, adsets, campaigns, creatives
 from the21os.meta import insights as meta_insights
 from the21os.meta.client import MetaNotConfigured
 from the21os.safety.pipeline import WriteRequest, run_write
+from the21os.wordpress.client import WordPressNotConfigured
+from the21os.wordpress.orders import orders_summary
 
 
 @dataclass
@@ -53,12 +56,14 @@ async def run_tool(name: str, params: dict, ctx: ToolContext) -> dict:
         return {"error": f"Unknown tool {name!r}"}
     try:
         return await _DISPATCH[name](params, ctx)
-    except (MetaNotConfigured, GA4NotConfigured, ValueError) as e:
+    except (MetaNotConfigured, GA4NotConfigured, WordPressNotConfigured, ValueError) as e:
         return {"error": str(e)}
     except FacebookRequestError as e:
         return {"error": e.api_error_message() or "Meta API request failed"}
     except GoogleAPICallError as e:
         return {"error": str(e.message) or "GA4 API request failed"}
+    except httpx.HTTPError as e:
+        return {"error": f"WordPress/WooCommerce API request failed: {e}"}
 
 
 def _actor(ctx: ToolContext) -> str:
@@ -242,6 +247,14 @@ async def _t_correlate(params: dict, ctx: ToolContext) -> dict:
         for row in ga4_data.rows
     ]
     return {"rows": correlate_campaigns(meta_rows, ga4_rows)}
+
+
+@_tool("woo_orders_summary")
+async def _t_woo_orders_summary(params: dict, ctx: ToolContext) -> dict:
+    conn = await ctx.db.get(WordPressConnection, 1)
+    if conn is None:
+        raise WordPressNotConfigured("WordPress/WooCommerce is not connected")
+    return await orders_summary(conn, params.get("date_preset", "today"))
 
 
 # ---- Meta writes ----------------------------------------------------------
@@ -616,6 +629,25 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "campaign id, kept side by side (never blended into one number)."
         ),
         "input_schema": {"type": "object", "properties": {**_DATE_PRESET_PROP, **_DATE_RANGE_PROPS}},
+    },
+    {
+        "name": "woo_orders_summary",
+        "description": (
+            "Real completed-order revenue and count from the connected WooCommerce store for a date "
+            "preset — the most trustworthy revenue number available (a paid order, unlike Meta/GA4 "
+            "pixel-based purchase counts, can't be inflated by overlapping action_types or missed by "
+            "iOS tracking restrictions). attributed_order_count is how many of those orders carry UTM "
+            "campaign attribution and could in principle be matched to a specific Meta campaign."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "date_preset": {
+                    "type": "string",
+                    "description": "One of: today, yesterday, last_7d, last_30d",
+                }
+            },
+        },
     },
     {
         "name": "meta_create_campaign",

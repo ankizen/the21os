@@ -18,11 +18,11 @@ class WordPressNotConfigured(RuntimeError):
     """Raised when the site URL or a credential pair isn't set."""
 
 
-def _wp_auth(conn: WordPressConnection) -> httpx.BasicAuth:
+def wp_auth(conn: WordPressConnection) -> httpx.BasicAuth:
     return httpx.BasicAuth(conn.app_username or "", conn.app_password or "")
 
 
-def _woo_auth(conn: WordPressConnection) -> httpx.BasicAuth:
+def woo_auth(conn: WordPressConnection) -> httpx.BasicAuth:
     return httpx.BasicAuth(conn.woo_consumer_key or "", conn.woo_consumer_secret or "")
 
 
@@ -31,7 +31,7 @@ async def check_wp_connection(conn: WordPressConnection) -> dict:
     if not (conn.site_url and conn.app_username and conn.app_password):
         raise WordPressNotConfigured("Site URL / WordPress Application Password not set")
     async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-        resp = await client.get(f"{conn.site_url}/wp-json/wp/v2/users/me", auth=_wp_auth(conn))
+        resp = await client.get(f"{conn.site_url}/wp-json/wp/v2/users/me", auth=wp_auth(conn))
         resp.raise_for_status()
         data = resp.json()
     return {"name": data.get("name"), "roles": data.get("roles", [])}
@@ -43,7 +43,7 @@ async def check_woo_connection(conn: WordPressConnection) -> dict:
         raise WordPressNotConfigured("WooCommerce Consumer Key/Secret not set")
     async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
         resp = await client.get(
-            f"{conn.site_url}/wp-json/wc/v3/orders", params={"per_page": 1}, auth=_woo_auth(conn)
+            f"{conn.site_url}/wp-json/wc/v3/orders", params={"per_page": 1}, auth=woo_auth(conn)
         )
         resp.raise_for_status()
         total = resp.headers.get("X-WP-Total")

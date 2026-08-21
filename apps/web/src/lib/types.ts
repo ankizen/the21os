@@ -180,6 +180,14 @@ export interface WordPressStatus {
   woo_error: string | null;
 }
 
+export interface WooOrderSummary {
+  date_preset: string;
+  order_count: number;
+  revenue: number;
+  currency: string | null;
+  attributed_order_count: number;
+}
+
 export interface CorrelationRow {
   campaign_id: string;
   campaign_name: string;
