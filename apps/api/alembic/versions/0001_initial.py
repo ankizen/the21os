@@ -16,7 +16,15 @@ branch_labels = None
 depends_on = None
 
 _operational_mode = postgresql.ENUM(
-    "DRY_RUN", "READ_ONLY", "SUPERVISED", "AUTONOMOUS", name="operationalmode"
+    "DRY_RUN",
+    "READ_ONLY",
+    "SUPERVISED",
+    "AUTONOMOUS",
+    name="operationalmode",
+    # Type creation is handled explicitly below (create()/drop()) — without
+    # this, SQLAlchemy also auto-emits CREATE TYPE when the enum is used as
+    # a column type in create_table(), duplicating it and failing on a real DB.
+    create_type=False,
 )
 
 
