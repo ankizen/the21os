@@ -8,7 +8,7 @@ action is registered here under the same name used in audit_log.action, so
 
 from collections.abc import Awaitable, Callable
 
-from the21secrets.meta import ads, adsets, campaigns
+from the21secrets.meta import ads, adsets, campaigns, creatives
 
 Executor = Callable[[dict], Awaitable[dict]]
 
@@ -95,3 +95,25 @@ async def _ad_pause(params: dict) -> dict:
 async def _ad_resume(params: dict) -> dict:
     a = await ads.set_ad_status(params["ad_id"], "ACTIVE")
     return a.model_dump()
+
+
+@register("ad.create")
+async def _ad_create(params: dict) -> dict:
+    a = await ads.create_ad(
+        name=params["name"], adset_id=params["adset_id"], creative_id=params["creative_id"]
+    )
+    return a.model_dump()
+
+
+@register("creative.create")
+async def _creative_create(params: dict) -> dict:
+    c = await creatives.create_creative(
+        name=params["name"],
+        message=params["message"],
+        link=params["link"],
+        headline=params["headline"],
+        call_to_action=params.get("call_to_action", "LEARN_MORE"),
+        image_hash=params.get("image_hash"),
+        video_id=params.get("video_id"),
+    )
+    return c.model_dump()

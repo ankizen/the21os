@@ -66,6 +66,14 @@ def check_daily_spend_ceiling(today_spend_cents: int, settings: SystemSettings) 
         )
 
 
+def check_max_ads_per_campaign(current_ad_count: int, settings: SystemSettings) -> None:
+    if current_ad_count >= settings.max_ads_per_campaign:
+        raise SafetyViolation(
+            f"This campaign already has {current_ad_count} ad(s) — "
+            f"at the limit of {settings.max_ads_per_campaign} per campaign (see Rules)."
+        )
+
+
 def requires_approval(budget_cents: int | None, settings: SystemSettings) -> bool:
     """Only meaningful in AUTONOMOUS mode — SUPERVISED always requires
     approval regardless of amount, and actions with no budget_cents (pause,

@@ -6,6 +6,7 @@ from the21secrets.safety.checks import (
     check_budget_ceiling,
     check_budget_increase,
     check_daily_spend_ceiling,
+    check_max_ads_per_campaign,
     requires_approval,
 )
 
@@ -55,6 +56,20 @@ def test_daily_spend_at_or_over_ceiling_raises() -> None:
         check_daily_spend_ceiling(150_000, _settings())
     with pytest.raises(SafetyViolation):
         check_daily_spend_ceiling(200_000, _settings())
+
+
+def test_max_ads_per_campaign_under_limit_passes() -> None:
+    check_max_ads_per_campaign(5, _settings())
+
+
+def test_max_ads_per_campaign_at_limit_raises() -> None:
+    with pytest.raises(SafetyViolation):
+        check_max_ads_per_campaign(10, _settings())
+
+
+def test_max_ads_per_campaign_over_limit_raises() -> None:
+    with pytest.raises(SafetyViolation):
+        check_max_ads_per_campaign(15, _settings())
 
 
 def test_requires_approval_over_threshold() -> None:

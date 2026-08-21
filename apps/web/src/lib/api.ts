@@ -10,11 +10,15 @@ export class ApiError extends Error {
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  // FormData bodies must NOT get an explicit Content-Type — the browser sets
+  // its own multipart boundary, which we'd otherwise clobber with the
+  // default below.
+  const isFormData = init?.body instanceof FormData;
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...init?.headers,
     },
   });
@@ -41,4 +45,5 @@ export const api = {
     apiFetch<T>(path, { method: "PUT", body: data ? JSON.stringify(data) : undefined }),
   patch: <T>(path: string, data?: unknown) =>
     apiFetch<T>(path, { method: "PATCH", body: data ? JSON.stringify(data) : undefined }),
+  postForm: <T>(path: string, form: FormData) => apiFetch<T>(path, { method: "POST", body: form }),
 };

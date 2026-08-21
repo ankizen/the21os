@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CreateAdDialog } from "@/components/create-ad-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
@@ -31,12 +32,17 @@ export default function AdsPage() {
 
   const pause = useWriteAction((v) => `/api/meta/ads/${v.id}/pause`, { invalidate: INVALIDATE });
   const resume = useWriteAction((v) => `/api/meta/ads/${v.id}/resume`, { invalidate: INVALIDATE });
+  const create = useWriteAction("/api/meta/ads", { invalidate: INVALIDATE });
 
   const notConnected = error instanceof ApiError && error.status === 503;
 
   return (
     <>
-      <PageHeader title="Ads" description="Status per ad. Creative previews ship in Phase 4." />
+      <PageHeader title="Ads" description="Status per ad, and which creative each one uses.">
+        {!notConnected && !isLoading && (
+          <CreateAdDialog isPending={create.isPending} onSubmit={(body) => create.mutate(body)} />
+        )}
+      </PageHeader>
 
       {isLoading ? (
         <Skeleton className="h-96 w-full" />
@@ -54,6 +60,7 @@ export default function AdsPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Ad set ID</TableHead>
                   <TableHead>Campaign ID</TableHead>
+                  <TableHead>Creative ID</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -69,6 +76,9 @@ export default function AdsPage() {
                       <TableCell className="text-sm text-muted-foreground">{a.adset_id ?? "—"}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {a.campaign_id ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {a.creative_id ?? "—"}
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-end">

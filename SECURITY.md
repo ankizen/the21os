@@ -27,7 +27,7 @@ today.
   environment variables / Coolify secrets only, never in a database row.
 - `.env` files are gitignored; `.env.example` documents every variable without real values.
 
-## Safety layer (implemented, Phase 3)
+## Safety layer (implemented, Phase 3–4)
 
 Every Meta write — REST API today, MCP and the Command Center in later phases — goes through the exact
 same pipeline (`safety/pipeline.py::run_write`), regardless of caller:
@@ -56,6 +56,17 @@ validate → hard ceilings (never bypassed by mode) → operational-mode branch 
   entirely via API as of 2026-05-19), but `create_campaign`'s signature doesn't expose the field that would
   trigger it — the guard is real and tested, just structurally unreachable until a future phase exposes
   richer campaign parameters (e.g. to Claude via MCP).
+- **Max ads per campaign** (Phase 4): checked live against Meta (`Campaign.get_ads()`) when creating an ad,
+  not from a local count — there's no local ad table to go stale.
+- **Asset uploads** (`safety/pipeline.py::run_asset_upload`) intentionally use a lighter path than
+  `run_write`: an image or video payload can be hundreds of MB, which can't sit in
+  `ApprovalRequest.params_json` or `audit_log.params_json` the way a small campaign/budget write can. Only
+  metadata (filename, size, resulting hash/id) is audited — never the raw bytes. Still mode-gated
+  (`READ_ONLY` rejects, `DRY_RUN` previews), but there's no approval-queue path for uploads: no budget or
+  spend is at stake in creating an image/video asset by itself, only in what a campaign later does with it.
+  Image upload is live-verified against the real account (upload → creative → ad, end to end). Video upload
+  follows the SDK's documented file-upload contract but isn't live-verified the same way — there's no test
+  video file in this environment; if it needs a fix, that surfaces the first time someone uploads a real one.
 
 Claude is never trusted to self-enforce a limit stated only in a prompt — every check above runs in Python,
 not in a system prompt.

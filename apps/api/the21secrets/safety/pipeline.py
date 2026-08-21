@@ -10,6 +10,7 @@ same run_write — the safety gate must be identical no matter who's asking).
 """
 
 import uuid
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Literal
 
@@ -17,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from the21secrets.audit.service import write_audit_log
 from the21secrets.db.models import ApprovalRequest, OperationalMode, SystemSettings
-from the21secrets.meta import insights
+from the21secrets.meta import ads, insights
 from the21secrets.safety import checks, executors
 from the21secrets.safety.checks import SafetyViolation
 
@@ -35,6 +36,9 @@ class WriteRequest:
     previous_budget_cents: int | None = None
     is_new_campaign: bool = False
     is_spend_increasing: bool = False
+    # Set to the target campaign_id when creating an ad, to check
+    # max_ads_per_campaign. None for everything else.
+    new_ad_campaign_id: str | None = None
     # Snapshot of the entity's state before this write, for the rollback
     # journal (safety/rollback.py). None for creates — there's no "before".
     before: dict | None = None
@@ -68,6 +72,10 @@ async def _run_hard_ceilings(db: AsyncSession, req: WriteRequest, settings: Syst
 
     if req.is_new_campaign:
         await checks.check_new_campaign_quota(db, settings)
+
+    if req.new_ad_campaign_id:
+        current_count = await ads.count_ads_in_campaign(req.new_ad_campaign_id)
+        checks.check_max_ads_per_campaign(current_count, settings)
 
     if req.is_spend_increasing:
         today = await insights.get_account_insights(date_preset="today")
@@ -159,6 +167,83 @@ async def run_write(db: AsyncSession, req: WriteRequest) -> WriteOutcome:
         return WriteOutcome(status="pending_approval", approval_id=str(approval.id))
 
     return await _execute(db, req, request_id)
+
+
+async def run_asset_upload(
+    db: AsyncSession,
+    *,
+    action: str,
+    actor: str,
+    source: str,
+    metadata: dict,
+    upload_fn: Callable[[], Awaitable[dict]],
+) -> WriteOutcome:
+    """A lighter path for image/video uploads. These don't go through the
+    full run_write pipeline: their payload can be up to hundreds of MB
+    (video), which can't sit in ApprovalRequest.params_json or
+    audit_log.params_json the way a small campaign/budget write can —
+    `metadata` (filename, size, resulting hash/id) is what gets audited,
+    never the raw bytes. Still mode-gated (READ_ONLY rejects, DRY_RUN
+    previews) since uploading does create a real asset on Meta, but there's
+    no approval-queue path for uploads — no budget/spend is at stake in
+    creating an image or video asset by itself, only in what a campaign
+    later does with it."""
+    request_id = str(uuid.uuid4())
+    settings = await _get_settings(db)
+
+    if settings.operational_mode == OperationalMode.READ_ONLY:
+        reason = "READ_ONLY mode — writes are disabled (see Rules)."
+        await write_audit_log(
+            db,
+            request_id=request_id,
+            actor=actor,
+            source=source,
+            action=action,
+            params=metadata,
+            success=False,
+            decision_reason=reason,
+        )
+        return WriteOutcome(status="rejected", reason=reason)
+
+    if settings.operational_mode == OperationalMode.DRY_RUN:
+        await write_audit_log(
+            db,
+            request_id=request_id,
+            actor=actor,
+            source=source,
+            action=action,
+            params=metadata,
+            success=True,
+            decision_reason="DRY_RUN — validated, not sent to Meta.",
+        )
+        return WriteOutcome(status="dry_run", result=metadata)
+
+    try:
+        result = await upload_fn()
+    except Exception as e:
+        await write_audit_log(
+            db,
+            request_id=request_id,
+            actor=actor,
+            source=source,
+            action=action,
+            params=metadata,
+            success=False,
+            decision_reason=str(e),
+        )
+        raise
+
+    await write_audit_log(
+        db,
+        request_id=request_id,
+        actor=actor,
+        source=source,
+        action=action,
+        params=metadata,
+        after=result,
+        success=True,
+    )
+    return WriteOutcome(status="executed", result=result)
 
 
 async def _execute(db: AsyncSession, req: WriteRequest, request_id: str) -> WriteOutcome:

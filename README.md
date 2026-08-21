@@ -10,14 +10,14 @@ was reused, forked, or rejected from the community Meta/GA4 MCP ecosystem, and w
 
 ## Status
 
-**Phase 3 — Meta Ads writes.** Phases 1–2 (auth, read-only Meta data) plus real writes — create campaign,
-budget updates, pause/resume, duplicate — all gated by a real safety pipeline (hard ceilings, operational
-modes, an approval queue, rollback), not just a UI that pretends to. Defaults to `DRY_RUN`: nothing touches
-the real account until the mode is deliberately changed on the Rules page. Deployed and live at
-`app.ankithing.com` / `api.ankithing.com`. Ad set/ad *creation* and full campaign duplication (ad
-sets/ads/creatives, not just the campaign shell) are deliberately deferred — see [`SECURITY.md`](SECURITY.md)
-for exactly what's gated and how. GA4 and the MCP tool layer don't exist yet — those pages still show an
-honest "not connected yet" state, never fake data. See the phase list in
+**Phase 4 — Creatives.** Phases 1–3 (auth, read-only Meta data, gated writes) plus image upload, creative
+creation, and — now that a creative can actually exist — ad creation, completing what Phase 3 deferred.
+Full chain (image upload → creative → ad, all `PAUSED`) is live-verified against the real account. Video
+upload is implemented against the SDK's documented file-upload path but isn't live-verified the same way —
+there's no test video in this environment, see [`SECURITY.md`](SECURITY.md). Deployed and live at
+`app.ankithing.com` / `api.ankithing.com`, still defaulting to `DRY_RUN`. GA4 and the MCP tool layer don't
+exist yet, and creative performance/fatigue-detection is Phase 7 (optimization) scope — those stay honest
+"not connected"/"not built" states, never fake data. See the phase list in
 [`docs/research/architecture-decision.md`](docs/research/architecture-decision.md#module-layout-backend) for
 what's next.
 

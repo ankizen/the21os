@@ -27,7 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/campaigns", label: "Campaigns", icon: Megaphone, comingInPhase: null },
   { href: "/adsets", label: "Ad Sets", icon: LayoutGrid, comingInPhase: null },
   { href: "/ads", label: "Ads", icon: PlaySquare, comingInPhase: null },
-  { href: "/creatives", label: "Creatives", icon: Images, comingInPhase: 4 },
+  { href: "/creatives", label: "Creatives", icon: Images, comingInPhase: null },
   { href: "/analytics", label: "Analytics", icon: BarChart3, comingInPhase: 5 },
   { href: "/compare", label: "Compare", icon: GitCompareArrows, comingInPhase: 5 },
   { href: "/command-center", label: "AI Command Center", icon: Sparkles, comingInPhase: 6 },

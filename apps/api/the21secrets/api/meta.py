@@ -1,19 +1,20 @@
+from collections import Counter
 from collections.abc import Awaitable, Callable
 from typing import Literal, TypeVar
 
 from facebook_business.exceptions import FacebookRequestError
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from the21secrets.auth.dependencies import get_current_user
 from the21secrets.db.base import get_db
 from the21secrets.db.models import User
-from the21secrets.meta import accounts, ads, adsets, campaigns, insights
+from the21secrets.meta import accounts, ads, adsets, assets, campaigns, creatives, insights
 from the21secrets.meta.client import MetaNotConfigured
-from the21secrets.meta.models import AccountInfo, Ad, AdSet, Campaign
+from the21secrets.meta.models import AccountInfo, Ad, AdSet, Campaign, Creative
 from the21secrets.meta.models import Insights as InsightsModel
-from the21secrets.safety.pipeline import WriteRequest, run_write
+from the21secrets.safety.pipeline import WriteRequest, run_asset_upload, run_write
 
 router = APIRouter(prefix="/api/meta", tags=["meta"], dependencies=[Depends(get_current_user)])
 
@@ -305,5 +306,114 @@ async def resume_ad(
         source="rest_api",
         is_spend_increasing=True,
         before=current.model_dump(),
+    )
+    return await _do_write(db, req)
+
+
+class CreateAdRequest(BaseModel):
+    name: str
+    adset_id: str
+    creative_id: str
+
+
+@router.post("/ads", response_model=WriteResponse)
+async def create_ad(
+    body: CreateAdRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+) -> WriteResponse:
+    adset = await _run(lambda: adsets.get_adset(body.adset_id))
+    req = WriteRequest(
+        action="ad.create",
+        entity="ad",
+        entity_id=None,
+        summary=f"Create ad '{body.name}' in ad set {body.adset_id} (starts PAUSED)",
+        params=body.model_dump(),
+        actor=user.email,
+        source="rest_api",
+        new_ad_campaign_id=adset.campaign_id,
+    )
+    return await _do_write(db, req)
+
+
+# ---- assets ----------------------------------------------------------------
+
+
+@router.post("/assets/image", response_model=WriteResponse)
+async def upload_image(
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> WriteResponse:
+    file_bytes = await file.read()
+    outcome = await run_asset_upload(
+        db,
+        action="asset.upload_image",
+        actor=user.email,
+        source="rest_api",
+        metadata={"filename": file.filename, "size_bytes": len(file_bytes)},
+        upload_fn=lambda: assets.upload_image(file_bytes),
+    )
+    return WriteResponse(
+        status=outcome.status, result=outcome.result, approval_id=outcome.approval_id, reason=outcome.reason
+    )
+
+
+@router.post("/assets/video", response_model=WriteResponse)
+async def upload_video(
+    name: str,
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> WriteResponse:
+    file_bytes = await file.read()
+    outcome = await run_asset_upload(
+        db,
+        action="asset.upload_video",
+        actor=user.email,
+        source="rest_api",
+        metadata={"filename": file.filename, "name": name, "size_bytes": len(file_bytes)},
+        upload_fn=lambda: assets.upload_video(file_bytes, name=name),
+    )
+    return WriteResponse(
+        status=outcome.status, result=outcome.result, approval_id=outcome.approval_id, reason=outcome.reason
+    )
+
+
+# ---- creatives ---------------------------------------------------------------
+
+
+@router.get("/creatives", response_model=list[Creative])
+async def get_creatives() -> list[Creative]:
+    creative_list = await _run(creatives.list_creatives)
+    all_ads = await _run(ads.list_ads)
+    usage = Counter(a.creative_id for a in all_ads if a.creative_id)
+    for c in creative_list:
+        c.usage_count = usage.get(c.id, 0)
+    return creative_list
+
+
+class CreateCreativeRequest(BaseModel):
+    name: str
+    message: str
+    link: str
+    headline: str
+    call_to_action: str = "LEARN_MORE"
+    image_hash: str | None = None
+    video_id: str | None = None
+
+
+@router.post("/creatives", response_model=WriteResponse)
+async def create_creative(
+    body: CreateCreativeRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> WriteResponse:
+    req = WriteRequest(
+        action="creative.create",
+        entity="creative",
+        entity_id=None,
+        summary=f"Create creative '{body.name}'",
+        params=body.model_dump(),
+        actor=user.email,
+        source="rest_api",
     )
     return await _do_write(db, req)

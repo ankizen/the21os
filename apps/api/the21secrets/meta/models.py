@@ -38,6 +38,21 @@ class Ad(BaseModel):
     effective_status: str
     adset_id: str | None = None
     campaign_id: str | None = None
+    creative_id: str | None = None
+
+
+class Creative(BaseModel):
+    id: str
+    name: str
+    status: str | None = None
+    thumbnail_url: str | None = None
+    image_url: str | None = None
+    video_id: str | None = None
+    object_type: str | None = None
+    body: str | None = None
+    title: str | None = None
+    call_to_action_type: str | None = None
+    usage_count: int = 0
 
 
 class Insights(BaseModel):

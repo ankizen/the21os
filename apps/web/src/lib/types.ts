@@ -79,6 +79,21 @@ export interface MetaAd {
   effective_status: string;
   adset_id: string | null;
   campaign_id: string | null;
+  creative_id: string | null;
+}
+
+export interface MetaCreative {
+  id: string;
+  name: string;
+  status: string | null;
+  thumbnail_url: string | null;
+  image_url: string | null;
+  video_id: string | null;
+  object_type: string | null;
+  body: string | null;
+  title: string | null;
+  call_to_action_type: string | null;
+  usage_count: number;
 }
 
 export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED" | "EXPIRED";
