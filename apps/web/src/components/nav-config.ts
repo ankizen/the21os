@@ -30,7 +30,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/creatives", label: "Creatives", icon: Images, comingInPhase: null },
   { href: "/analytics", label: "Analytics", icon: BarChart3, comingInPhase: null },
   { href: "/compare", label: "Compare", icon: GitCompareArrows, comingInPhase: null },
-  { href: "/command-center", label: "AI Command Center", icon: Sparkles, comingInPhase: 6 },
+  { href: "/command-center", label: "AI Command Center", icon: Sparkles, comingInPhase: null },
   { href: "/actions", label: "Actions", icon: Zap, comingInPhase: null },
   { href: "/rules", label: "Rules", icon: ShieldCheck, comingInPhase: null },
   { href: "/integrations", label: "Integrations", icon: Blocks, comingInPhase: null },

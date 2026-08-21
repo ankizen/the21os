@@ -146,6 +146,27 @@ export interface Ga4Report {
   row_count: number;
 }
 
+export interface CommandCenterMessage {
+  role: string;
+  content: unknown;
+}
+
+export interface CommandCenterTrace {
+  tool: string;
+  input: Record<string, unknown>;
+  result: Record<string, unknown>;
+}
+
+export interface CommandCenterAskResponse {
+  reply: string;
+  trace: CommandCenterTrace[];
+  messages: CommandCenterMessage[];
+}
+
+export interface CommandCenterStatus {
+  configured: boolean;
+}
+
 export interface CorrelationRow {
   campaign_id: string;
   campaign_name: string;

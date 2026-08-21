@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from the21os.api.analytics import router as analytics_router
 from the21os.api.approvals import router as approvals_router
 from the21os.api.audit import router as audit_router
+from the21os.api.command_center import router as command_center_router
 from the21os.api.ga4 import router as ga4_router
 from the21os.api.meta import router as meta_router
 from the21os.api.settings import router as settings_router
@@ -18,3 +19,4 @@ api_router.include_router(meta_router)
 api_router.include_router(approvals_router)
 api_router.include_router(ga4_router)
 api_router.include_router(analytics_router)
+api_router.include_router(command_center_router)

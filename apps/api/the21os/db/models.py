@@ -108,3 +108,23 @@ class ApprovalRequest(Base):
     requested_by: Mapped[str] = mapped_column(String(255))
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     decided_by: Mapped[str | None] = mapped_column(String(255), default=None)
+
+
+class ClaudeUsage(Base):
+    """Per-request Claude API usage, for cost observability (master prompt
+    SS31). cost_cents is computed at write time from a hardcoded per-model
+    rate table (command_center/pricing.py) since the API itself only
+    returns token counts, never a dollar figure."""
+
+    __tablename__ = "claude_usage"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+    actor: Mapped[str] = mapped_column(String(255))
+    task_type: Mapped[str] = mapped_column(String(64))
+    model: Mapped[str] = mapped_column(String(64))
+    input_tokens: Mapped[int] = mapped_column(Integer)
+    output_tokens: Mapped[int] = mapped_column(Integer)
+    cost_cents: Mapped[int] = mapped_column(Integer)

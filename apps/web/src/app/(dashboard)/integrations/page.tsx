@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/page-header";
 import { api } from "@/lib/api";
-import type { Ga4PropertyInfo, MetaAccountInfo } from "@/lib/types";
+import type { CommandCenterStatus, Ga4PropertyInfo, MetaAccountInfo } from "@/lib/types";
 
 export default function IntegrationsPage() {
   const meta = useQuery<MetaAccountInfo>({
@@ -18,6 +18,11 @@ export default function IntegrationsPage() {
   const ga4 = useQuery<Ga4PropertyInfo>({
     queryKey: ["ga4", "property"],
     queryFn: () => api.get<Ga4PropertyInfo>("/api/ga4/property"),
+    retry: false,
+  });
+  const claude = useQuery<CommandCenterStatus>({
+    queryKey: ["command-center", "status"],
+    queryFn: () => api.get<CommandCenterStatus>("/api/command-center/status"),
     retry: false,
   });
 
@@ -84,13 +89,21 @@ export default function IntegrationsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Claude / MCP</CardTitle>
-            <Badge variant="outline" className="text-muted-foreground">
-              Not connected
-            </Badge>
+            {claude.isLoading ? (
+              <Skeleton className="h-5 w-20" />
+            ) : claude.data?.configured ? (
+              <Badge className="bg-emerald-600 text-white">Connected</Badge>
+            ) : (
+              <Badge variant="outline" className="text-muted-foreground">
+                Not connected
+              </Badge>
+            )}
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Tool access for the AI Command Center</p>
-            <p className="mt-2 text-xs text-muted-foreground">Ships in Phase 6</p>
+            <p className="text-sm text-muted-foreground">In-process tool access for the AI Command Center</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {claude.data?.configured ? "32 tools — reads + safety-gated writes" : "Set ANTHROPIC_API_KEY."}
+            </p>
           </CardContent>
         </Card>
       </div>

@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     google_project_id: str | None = Field(default=None, alias="GOOGLE_PROJECT_ID")
     ga4_property_id: str | None = Field(default=None, alias="GA4_PROPERTY_ID")
 
+    # Command Center — required from Phase 6 onward.
+    anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
+    anthropic_model: str = Field(default="claude-sonnet-5", alias="ANTHROPIC_MODEL")
+
     @property
     def is_prod(self) -> bool:
         return self.env == "prod"

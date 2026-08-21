@@ -1,0 +1,38 @@
+const TOOL_LABELS: Record<string, string> = {
+  meta_get_account_info: "Checked account info",
+  meta_list_campaigns: "Listed campaigns",
+  meta_get_campaign: "Looked up a campaign",
+  meta_list_adsets: "Listed ad sets",
+  meta_get_adset: "Looked up an ad set",
+  meta_list_ads: "Listed ads",
+  meta_get_ad: "Looked up an ad",
+  meta_list_creatives: "Listed creatives",
+  meta_get_creative: "Looked up a creative",
+  meta_get_account_insights: "Checked account performance",
+  meta_get_campaign_insights: "Checked campaign performance",
+  ga4_run_report: "Ran a GA4 report",
+  ga4_landing_page_report: "Checked landing page report",
+  ga4_campaign_report: "Checked GA4 campaign report",
+  ga4_traffic_source_report: "Checked traffic sources",
+  ga4_conversion_report: "Checked conversions",
+  ga4_revenue_report: "Checked revenue",
+  ga4_realtime_report: "Checked realtime users",
+  ga4_property_info: "Checked GA4 property",
+  analytics_correlate_campaigns: "Correlated Meta + GA4",
+  meta_create_campaign: "Created a campaign",
+  meta_update_campaign_budget: "Updated campaign budget",
+  meta_pause_campaign: "Paused a campaign",
+  meta_resume_campaign: "Resumed a campaign",
+  meta_duplicate_campaign: "Duplicated a campaign",
+  meta_update_adset_budget: "Updated ad set budget",
+  meta_pause_adset: "Paused an ad set",
+  meta_resume_adset: "Resumed an ad set",
+  meta_pause_ad: "Paused an ad",
+  meta_resume_ad: "Resumed an ad",
+  meta_create_ad: "Created an ad",
+  meta_create_creative: "Created a creative",
+};
+
+export function describeTool(name: string): string {
+  return TOOL_LABELS[name] ?? name;
+}
