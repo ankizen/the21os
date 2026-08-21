@@ -27,8 +27,11 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:?set ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
-    ports:
-      - "8000:8000"
+    # No host port publish — Coolify's proxy is the only ingress in
+    # production. For local full-stack testing via `docker compose up`,
+    # add a docker-compose.override.yml with a `ports:` mapping.
+    expose:
+      - "8000"
 
   web:
     build:
@@ -40,8 +43,8 @@ services:
     restart: unless-stopped
     depends_on:
       - api
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
 
 volumes:
   db_data:
